@@ -125,21 +125,21 @@ function loadDatatable(table,data,DTtableSelector,clientDTtableSelector){
                     } );
 }
 
-// async function reloadDatatable(responseData,table,totalRec,displatLen,DTtableSelector,clientDTtableSelector){
-//     let loopLength = Math.floor(totalRec/displatLen);
-//     fetchRemainingData(table,responseData,displatLen,loopLength,DTtableSelector,clientDTtableSelector);
+// async function reloadDatatable(responseData,table,totalRec,displayLength,DTtableSelector,clientDTtableSelector){
+//     let loopLength = Math.floor(totalRec/displayLength);
+//     fetchRemainingData(table,responseData,displayLength,loopLength,DTtableSelector,clientDTtableSelector);
 // }
 
-function reloadDatatable(responseData,table,totalRec,displatLen,DTtableSelector,clientDTtableSelector){
-    let loopLength = Math.floor(totalRec/displatLen);
+function reloadDatatable(responseData,table,totalRec,displayLength,DTtableSelector,clientDTtableSelector){
+    let loopLength = Math.floor(totalRec/displayLength);
     let sucessLength = [];
     for(let i = 1; i <= loopLength; i++){
         let postData = {
                 "draw":1,
-                "start": i*displatLen,
-                "length": displatLen
+                "start": i*displayLength,
+                "length": displayLength
             };
-        //var fechedData = await fetchRemainingData(i,displatLen);
+        //var fechedData = await fetchRemainingData(i,displayLength);
 
          $.ajax({
                 async: true,
