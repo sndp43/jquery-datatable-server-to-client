@@ -37,33 +37,34 @@
 <script type="text/javascript">
 var table;
 var mainurl = "getData.php";
+var responseData = [];
+var displayLength = 10;
 
 function initDatatable(DTtableSelector,clientDTtableSelector){
-    //serverside
-        let table = $('.'+DTtableSelector).DataTable({
+    //serverside datatable
+
+         table = $('.'+DTtableSelector).DataTable({
                 "bProcessing": true,
                 "serverSide": true,
                 "paging": true,
                 "ordering": false,
                 "searching": true,
-                //"deferLoading": 57,
-                "pageLength" : 10,
+                "pageLength" : displayLength,
                 "bLengthChange" : false,
-                "ajax":{
+                "ajax":{    
+                            async: false,
                             cache : true,
                             url : mainurl, // json
                             type: "GET",  // type of method
                             data: function ( d ) {
-                                let len = d.length;
                                     delete d.search;
                                     delete d.columns;
                                     delete d.length;
                                     return $.extend( {}, d, {
-                                        "length": len
+                                        "length": displayLength
                                     } );
                             },
                             dataSrc: function(json){
-                                console.log(json);
                                     //json.draw = 2;
                                     json.recordsTotal = json.recordsTotal;
                                     json.recordsFiltered = json.recordsFiltered;
@@ -82,20 +83,26 @@ function initDatatable(DTtableSelector,clientDTtableSelector){
                     console.log(oSettings);
                     //disable search
                     $(this).parents(".dataTables_wrapper").find('.dataTables_filter input').attr("disabled", true);
-                    table.on( 'preDraw', function (e, settings) {
-                            return false;
-                    });
+
                     //disable pagination
                     $(this).nextAll(".dataTables_paginate").find("a").addClass("disabled");
                     
                     //call the other ajax calls based on the total no of records in the DB 
-                    reloadDatatable(this.fnGetData(),table,oSettings._iRecordsTotal,oSettings._iDisplayLength,DTtableSelector,clientDTtableSelector);
+                    setTimeout(() => {
+                        reloadDatatable(this.fnGetData(),table,oSettings._iRecordsTotal,displayLength,DTtableSelector,clientDTtableSelector);  
+                    }, 1);
+
                 }
         });
+
+        table.on( 'preDraw', function (e, settings) {
+                    return false;
+                });
 }
 
 
 function loadDatatable(table,data,DTtableSelector,clientDTtableSelector){
+    //clienside datatable
                     table.destroy();
                     $("."+DTtableSelector).remove();
                     $("."+clientDTtableSelector).show();
@@ -107,6 +114,7 @@ function loadDatatable(table,data,DTtableSelector,clientDTtableSelector){
                         "searching": true,
                         "bLengthChange" : false,
                         "aaSorting": [],
+                        "pageLength" : displayLength,
                         data: data,
                         columns: [
                             { data: 'user_id' },
@@ -117,31 +125,37 @@ function loadDatatable(table,data,DTtableSelector,clientDTtableSelector){
                     } );
 }
 
-function reloadDatatable(initialData,table,totalRec,displatLen,DTtableSelector,clientDTtableSelector){
-    //clienside
-    let finalData = initialData;
-    
-    console.log(initialData);
-    console.log(Math.ceil(totalRec/displatLen));
-    let loopLength = Math.ceil(totalRec/displatLen);
-    for(let i = 1; i <= loopLength; i++){
-        
-        setTimeout(() => {
-            var fechedData = fetchRemainingData(i,displatLen);
-            finalData = [...finalData,...fechedData];
-            
-            if(loopLength == i){
-                 console.log(finalData);
-                 loadDatatable(table,finalData,DTtableSelector,clientDTtableSelector);
-            }
-        }, 2000);
-    }
-    
-    //table.destroy();
-}
+// async function reloadDatatable(responseData,table,totalRec,displatLen,DTtableSelector,clientDTtableSelector){
+//     let loopLength = Math.floor(totalRec/displatLen);
+//     fetchRemainingData(table,responseData,displatLen,loopLength,DTtableSelector,clientDTtableSelector);
+// }
 
-function fetchRemainingData(start,displatLen){
-    return [{user_id: "1", name: "test feached", email: "sa", mobile_number: "1111111111"}];
+function reloadDatatable(responseData,table,totalRec,displatLen,DTtableSelector,clientDTtableSelector){
+    let loopLength = Math.floor(totalRec/displatLen);
+    let sucessLength = [];
+    for(let i = 1; i <= loopLength; i++){
+        let postData = {
+                "draw":1,
+                "start": i*displatLen,
+                "length": displatLen
+            };
+        //var fechedData = await fetchRemainingData(i,displatLen);
+
+         $.ajax({
+                async: true,
+                url : mainurl, // json
+                type: "GET",  // type of method
+                data: postData,
+                success: function(data){
+                    let res = JSON.parse(data);
+                    responseData = [...responseData,...res.data];
+                    sucessLength.push(true);
+                    if(sucessLength.length == loopLength){
+                        loadDatatable(table,responseData,DTtableSelector,clientDTtableSelector);
+                    }
+                }
+            });
+}
 }
 
 
